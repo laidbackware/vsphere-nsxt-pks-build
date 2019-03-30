@@ -1,0 +1,137 @@
+hostname: "192.168.0.183"
+username: "admin"
+password: "Pass123$123$"
+vc_password: "Pass123$"
+vc_ip: "192.168.0.181"
+validate_certs: False
+
+# Manager Section. Can be different to Edge vCenter/network
+manager_datacenter: "Home"
+manager_datastore: "SSD"
+manager_portgroup: "Net1"
+manager_cluster: "Physical"
+manager_vmname: "nsxt-manager"
+manager_hostname: "nsxt-manager-24"
+manager_dns_server: "192.168.0.110"
+manager_dns_domain: "home.local"
+manager_ntp_server: "192.168.0.110"
+manager_gateway: "192.168.0.1"
+manager_ip_address: "192.168.0.183"
+manager_netmask: "255.255.255.0"
+manager_admin_password: "Pass123$123$"
+manager_cli_password: "Pass123$123$"
+manager_path_to_ova: "http://192.168.0.3:8000/nsxt"
+manager_ova_file: "nsx-unified-appliance-2.4.0.0.0.12456291.ovf"
+manager_vcenter: "192.168.0.113"
+manager_vcenter_user: "administrator@vsphere.local"
+manager_vcenter_passwd: "Pass123$"
+manager_deployment_size: "small"
+
+
+ip_pools:
+- display_name: TEP-Pool
+  subnets:
+  - allocation_ranges:
+    - start: "172.16.0.2"
+      end: "172.16.0.254"
+    cidr: "172.16.0.0/24"
+- display_name: PKS-Floaters
+  subnets:
+  - allocation_ranges:
+    - start: "10.1.0.1"
+      end: "10.1.1.254"
+    cidr: "10.1.0.0/23"     
+    
+transportzones:
+- display_name: "TZ1-OVER"
+  transport_type: "OVERLAY"
+  host_switch_name: "sw_over"
+  description: "Overlay Transport Zone"
+- display_name: "TZ1-VLAN"
+  transport_type: "VLAN"
+  host_switch_name: "sw_vlan"
+  description: "Uplink Transport Zone"
+# - display_name: "TZ2"
+#   transport_type: "VLAN"
+#   host_switch_name: "hostswitch2"
+
+uplink_profiles:
+- display_name: uplinkProfile1
+  teaming:
+    active_list:
+    - uplink_name: "uplink-1"
+      uplink_type: PNIC
+    policy: FAILOVER_ORDER
+  transport_vlan: 0
+
+# Edge Section
+edge_ip_addresses: "192.168.0.184"
+edge_default_gateway_addresses: "192.168.0.1"
+edge_size: "MEDIUM"
+edge_ip: "192.168.0.184"
+edge_prefix_length: "24"
+edge_hostname: "EdgeVM1"
+
+edge_cluster_name: "edge-cluster-1"
+
+edge_transport_nodes:
+- host_switch_spec:
+    resource_type: "StandardHostSwitchSpec"
+    host_switches:
+    - host_switch_profiles:
+      - name: uplinkProfile1
+        type: UplinkHostSwitchProfile
+      host_switch_name: sw_over
+      pnics:
+      - device_name: "fp-eth2"
+        uplink_name: "uplink-1"
+      ip_assignment_spec:
+        resource_type: StaticIpPoolSpec
+        ip_pool_name: "TEP-Pool"
+    - host_switch_profiles:
+      - name: uplinkProfile1
+        type: UplinkHostSwitchProfile
+      host_switch_name: sw_vlan
+      pnics:
+      - device_name: "fp-eth0"
+        uplink_name: "uplink-1"
+  node_deployment_info:
+    resource_type: "EdgeNode"
+    deployment_config: 
+  #display_name: 069fb65a-344f-458a-b8e0-72503f17d939
+  transport_zone_endpoints:
+  - transport_zone_name: "TZ1-OVER"
+  - transport_zone_name: "TZ1-VLAN"
+
+compute_managers:
+- display_name: "vCenter"
+  server: "192.168.0.181"
+  origin_type: vCenter
+  credential_type: UsernamePasswordLoginCredential
+  username: "administrator@vsphere.local"
+  password: "Pass123$"
+
+transport_node_profiles:
+- display_name: TNP1
+  host_switches:
+  - host_switch_profiles:
+    - name: uplinkProfile1
+      type: UplinkHostSwitchProfile
+    host_switch_name: sw_over
+    pnics:
+    - device_name: vmnic2
+      uplink_name: "uplink-1"
+    ip_assignment_spec:
+      resource_type: StaticIpPoolSpec
+      ip_pool_name: "TEP-Pool"
+  description: "Cluster node profile"
+  transport_zone_endpoints:
+  - transport_zone_name: "TZ1-OVER"
+
+cluster_attach:
+- display_name: "TNC1"
+  description: "Transport Node Collections 1"
+  compute_manager_name: "vCenter"
+  cluster_name: "Compute"
+  transport_node_profile_name: "TNP1"
+

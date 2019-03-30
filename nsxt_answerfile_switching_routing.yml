@@ -1,0 +1,64 @@
+
+logical_switches:
+- display_name: PKS_Infra
+  transport_zone_name: "TZ1-OVER"
+  vlan: 0
+- display_name: Uplink_LS
+  transport_zone_name: "TZ1-VLAN"
+  vlan: 0
+
+logical_routers:
+- display_name: tier-0
+  transport_zone_name: "TZ1-OVER"
+  edge_cluster_name: edge-cluster-1
+  router_type: TIER0
+  high_availability_mode: ACTIVE_STANDBY
+- display_name: T1_PKS_Infra
+  transport_zone_name: "TZ1-OVER"
+  edge_cluster_name: edge-cluster-1
+  router_type: TIER1
+  high_availability_mode: ACTIVE_STANDBY
+
+logical_router_ports_t0_up:
+- display_name: "T0-Uplink"
+  resource_type: "LogicalRouterUpLinkPort"
+  logical_router_name: "tier-0"
+  ip_addresses: "192.168.0.185"
+  prefix_length: "24"
+  logical_switch_name: "Uplink_LS" # Existing
+  logical_switch_port_name: "T0-Uplink" # Will be created
+
+logical_router_static_routes:
+- logical_router_name: "tier-0"
+  ip_address: "192.168.0.1"
+  network: "0.0.0.0/0"
+  administrative_distance: "2"
+
+logical_router_ports_linking:
+- logical_router_t0_name: "tier-0"
+  logical_router_t1_name: "T1_PKS_Infra"
+
+logical_router_ports_ls_up:
+- display_name: "PKS_Infra-Uplink"
+  logical_router_name: "T1_PKS_Infra"
+  ip_addresses: "10.0.0.1"
+  prefix_length: "26"
+  logical_switch_name: "PKS_Infra" # Existing
+  logical_switch_port_name: "PKS_Infra-Uplink" # Will be created
+
+nsxt_ip_blocks:
+- display_name: "Node-Block"
+  cidr: "172.16.0.0/17"
+- display_name: "Pod-Block"
+  cidr: "172.16.128.0/17"
+
+route_advertise:
+  display_name: "T1_PKS_Infra"
+  enabled: True
+  advertise_dns_forwarder: True
+  advertise_lb_snat_ip: True
+  advertise_lb_vip: True
+  advertise_nat_routes: True
+  advertise_nsx_connected_routes: True
+  advertise_static_routes: True
+

@@ -1,0 +1,113 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  become: yes
+  vars_files:
+    - nsxt_answerfile_base.yml
+    - nsxt_answerfile_switching_routing.yml
+  tasks:
+    - name: Create a new IP address block
+      nsxt_ip_blocks:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        display_name: "{{item.display_name}}"
+        cidr: "{{item.cidr}}"
+        state: present
+        validate_certs: False
+      with_items:
+        - "{{nsxt_ip_blocks}}"
+
+    - name: Create logical router
+      nsxt_logical_routers:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "{{item.display_name}}"
+        edge_cluster_name: "{{item.edge_cluster_name}}"
+        router_type: "{{item.router_type}}"
+        high_availability_mode: "{{item.high_availability_mode}}"
+        state: "present"
+      with_items:
+        - "{{logical_routers}}"        
+
+    - name: Create logical switch
+      nsxt_logical_switches:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "{{item.display_name}}"
+        replication_mode: SOURCE
+        admin_state: UP
+        transport_zone_name: "{{item.transport_zone_name}}"
+        state: "present" 
+        vlan: "{{item.vlan}}"
+      with_items:
+        - "{{logical_switches}}"
+
+    # Next 2 sections create links between T0s and T1s
+    - name: Create logical router port
+      nsxt_logical_router_ports:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "Down link to {{item.logical_router_t1_name}}"
+        resource_type: "LogicalRouterLinkPortOnTIER0"
+        logical_router_name: "{{item.logical_router_t0_name}}"
+        state: "present"
+      register: result_t0
+      with_items:
+        - "{{logical_router_ports_linking}}"
+
+    - name: Create logical router port
+      nsxt_logical_router_ports:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "Uplink to {{item.0.logical_router_t0_name}}"
+        resource_type: "LogicalRouterLinkPortOnTIER1"
+        logical_router_name: "{{item.0.logical_router_t1_name}}"
+        linked_logical_router_port_id:
+          target_type: "LogicalRouterLinkPortOnTIER0"
+          target_display_name: "Down link to {{item.0.logical_router_t1_name}}"
+          target_id: "{{item.1['id']}}"
+        state: "present"
+      with_together:
+        - "{{logical_router_ports_linking}}"
+        - "{{result_t0.results}}"        
+    
+    - name: Add Static Routes on a Logical Router
+      nsxt_logical_router_static_routes:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        logical_router_name: "{{item.logical_router_name}}"
+        next_hops:
+        - administrative_distance: "{{item.administrative_distance}}"
+          ip_address: "{{item.ip_address}}"
+        network: "{{item.network}}"
+        state: "present" 
+      with_items:
+        - "{{logical_router_static_routes}}"
+
+    - name: Toggle tier 1 route advertisement
+      nsxt_route_advertise:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        display_name: "{{item.display_name}}"
+        validate_certs: False
+        enabled: "{{item.enabled}}"
+        advertise_dns_forwarder: "{{item.advertise_dns_forwarder}}"
+        advertise_lb_snat_ip: "{{item.advertise_lb_snat_ip}}"
+        advertise_lb_vip: "{{item.advertise_lb_vip}}"
+        advertise_nat_routes: "{{item.advertise_nat_routes}}"
+        advertise_nsx_connected_routes: "{{item.advertise_nsx_connected_routes}}"
+        advertise_static_routes: "{{item.advertise_static_routes}}"
+      with_items:
+        - "{{route_advertise}}"

@@ -1,0 +1,243 @@
+---
+- hosts: 127.0.0.1
+  connection: local
+  become: yes
+  vars_files:
+    - nsxt_answerfile_base.yml
+  tasks:
+    - name: deploy NSX Manager OVA
+      nsxt_deploy_ova:
+        ovftool_path: "/usr/bin"
+        #folder: ''
+        datacenter: "{{manager_datacenter}}"
+        datastore: "{{manager_datastore}}"
+        portgroup: "{{manager_portgroup}}"
+        cluster: "{{manager_cluster}}"
+        vmname: "{{manager_vmname}}"
+        hostname: "{{manager_hostname}}"
+        dns_server: "{{manager_dns_server}}"
+        dns_domain: "{{manager_dns_domain}}"
+        ntp_server: "{{manager_ntp_server}}"
+        gateway: "{{manager_gateway}}"
+        ip_address: "{{manager_ip_address}}"
+        netmask: "{{manager_netmask}}"
+        admin_password: "{{manager_admin_password}}"
+        cli_password: "{{manager_cli_password}}"
+        path_to_ova: "{{manager_path_to_ova}}"
+        ova_file: "{{manager_ova_file}}"
+        vcenter: "{{manager_vcenter}}"
+        vcenter_user: "{{manager_vcenter_user}}"
+        vcenter_passwd: "{{manager_vcenter_passwd}}"
+        deployment_size: "{{manager_deployment_size}}"
+        role: "nsx-manager nsx-controller"
+        allow_ssh_root_login: True
+        ssh_enabled: True
+
+    - name: wait_for http 
+      command: "curl -k --silent -v https://{{ manager_ip_address }}/login.jsp"
+      register: result
+      until: result.stdout.find("VMware NSX") != -1
+      retries: 120
+      delay: 5
+      changed_when: false
+ 
+    - name: Create ip pool
+      nsxt_ip_pools:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "{{item.display_name}}"
+        subnets: "{{item.subnets}}"
+        state: present
+      with_items:
+        - "{{ip_pools}}"    
+
+    - name: Create transport zone
+      nsxt_transport_zones:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        resource_type: "TransportZone"
+        display_name: "{{item.display_name}}"
+        description: "{{item.description}}"
+        transport_type: "{{item.transport_type}}"
+        host_switch_name: "{{item.host_switch_name}}"
+        state: "present"
+      register: result
+      with_items:
+        - "{{transportzones}}"
+    - debug: var=result.id
+
+    - name: Create uplink profile
+      nsxt_uplink_profiles:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        resource_type: UplinkHostSwitchProfile
+        display_name: "{{item.display_name}}"
+        mtu: 1600
+        teaming: "{{item.teaming}}"
+        transport_vlan: "{{item.transport_vlan}}"
+        state: "present"
+      with_items:
+        - "{{uplink_profiles}}"    
+
+    - name: Deploy compute manager
+      nsxt_fabric_compute_managers:
+          hostname: "{{hostname}}"
+          username: "{{username}}"
+          password: "{{password}}"
+          validate_certs: False
+          display_name: "vCenter"
+          server: "{{vc_ip}}"
+          origin_type: vCenter
+          credential:
+            credential_type: UsernamePasswordLoginCredential
+            username: "administrator@vsphere.local"
+            password: "{{vc_password}}"
+          state: present
+      register: compute_manager
+
+    - name: Create transport node profile
+      nsxt_transport_node_profiles:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        resource_type: TransportNodeProfile
+        display_name: "{{item.display_name}}"
+        description: "{{item.description}}"
+        host_switch_spec:
+          resource_type: StandardHostSwitchSpec
+          host_switches: "{{item.host_switches}}"
+        transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
+        state: present
+      with_items:
+        - "{{transport_node_profiles}}"
+
+    - name: Attach Transport node profile to cluster
+      nsxt_transport_node_collections:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "{{item.display_name}}"
+        resource_type: "TransportNodeCollection"
+        description: "{{item.description}}"
+        compute_manager_name: "{{item.compute_manager_name}}"
+        cluster_name: "{{item.cluster_name}}"
+        transport_node_profile_name: "{{item.transport_node_profile_name}}"
+        state: present      
+      with_items:
+        - "{{cluster_attach}}"
+
+    # 3 tasks below only supports creating a single edge.
+    - name: Add Edge VM
+      nsxt_fabric_nodes:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        resource_type: "EdgeNode"
+        display_name: "EdgeNode1"  #TODO not assinging as name in Manager
+        ip_addresses:
+        deployment_config:
+          form_factor: "{{edge_size}}"
+          node_user_settings:
+            cli_password: "{{password}}"
+            root_password: "{{password}}"
+          vm_deployment_config:
+            allow_ssh_root_login: True
+            enable_ssh: True
+            placement_type: VsphereDeploymentConfig
+            vc_name: "vCenter"
+            data_network_ids:
+            - network-15 # Fix
+            - network-15 # Fix
+            - network-14 # TEP network. Fix
+            management_network_id: "network-15" # Fix
+            hostname: "{{edge_hostname}}"
+            compute_id: "domain-c7" # Fix
+            storage_id: "datastore-13" # Fix
+            default_gateway_addresses:
+            - "{{edge_default_gateway_addresses}}"
+            management_port_subnets:
+            - ip_addresses:
+              - "{{edge_ip_addresses}}"
+              prefix_length: "{{edge_prefix_length}}"
+        state: present
+      register: result_edge
+
+    - debug: msg="{{result_edge.id}}"
+
+    - name: Create transport node
+      nsxt_transport_nodes:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "{{result_edge.id}}"
+        node_id: "{{result_edge.id}}"
+        host_switch_spec: "{{item.host_switch_spec}}"
+        transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
+        #resource_type: 'TransportNode'
+        node_deployment_info:
+          resource_type: "EdgeNode"
+          id: "{{result_edge.id}}"
+          ip_addresses:
+          - "{{edge_ip_addresses}}"
+          external_id: "{{result_edge.id}}"
+          deployment_config:
+            form_factor: "{{edge_size}}"  
+            node_user_settings:
+              cli_password: "{{password}}"
+              root_password: "{{password}}"
+            vm_deployment_config:
+              allow_ssh_root_login: True
+              enable_ssh: True
+              placement_type: VsphereDeploymentConfig
+              vc_name: "vCenter"
+              data_network_ids:
+              - network-15 # Fix
+              - network-15 # Fix
+              - network-14 # TEP network. Fix
+              management_network_id: "network-15" # Fix
+              hostname: "{{edge_hostname}}"
+              compute_id: "domain-c7" # Fix
+              storage_id: "datastore-13" # Fix
+              default_gateway_addresses:
+              - "{{edge_default_gateway_addresses}}"
+              management_port_subnets:
+              - ip_addresses:
+                - "{{edge_ip_addresses}}"
+                prefix_length: "{{edge_prefix_length}}"
+        state: present
+      with_items:
+        - "{{edge_transport_nodes}}"
+
+    - name: Add edge cluster
+      nsxt_edge_clusters:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        validate_certs: False
+        display_name: "{{edge_cluster_name}}"
+        cluster_profile_bindings:
+        - profile_id: 91bcaa06-47a1-11e4-8316-17ffc770799b
+          resource_type: EdgeHighAvailabilityProfile
+        members:
+        - transport_node_name: "{{result_edge.id}}"
+        state: present
+
+ ##TODO
+ # vCenter names for Edge creation versus moid names. Current order is OK with fixed deployments. Issue opened on source repo
+ # Fix why Edge creation gives a UID no the actual name
+
+ ##Improvement
+ # Handle error if edge creation failed and the edge still exists. Probably module update.
+ # Invesitigate collapsing edge creation and transport node into a single section
+ # Modify the above to allow for create of more than one object
+ # Check why IP pool updates. After ip claim this will likely error.
