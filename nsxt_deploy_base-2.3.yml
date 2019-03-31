@@ -29,9 +29,11 @@
         vcenter_user: "{{manager_vcenter_user}}"
         vcenter_passwd: "{{manager_vcenter_passwd}}"
         deployment_size: "{{manager_deployment_size}}"
-        role: "nsx-manager nsx-controller"
+        role: "nsx-manager"
         allow_ssh_root_login: True
         ssh_enabled: True
+
+
 
     - name: wait_for http 
       command: "curl -k --silent -v https://{{ manager_ip_address }}/login.jsp"
@@ -41,6 +43,9 @@
       delay: 5
       changed_when: false
  
+    # - pause: # Wait seconds for API to stabalize
+    #   seconds: 90
+
     - name: Create ip pool
       nsxt_ip_pools:
         hostname: "{{hostname}}"
@@ -101,38 +106,73 @@
           state: present
       register: compute_manager
 
-    - name: Create transport node profile
-      nsxt_transport_node_profiles:
-        hostname: "{{hostname}}"
-        username: "{{username}}"
-        password: "{{password}}"
-        validate_certs: False
-        resource_type: TransportNodeProfile
-        display_name: "{{item.display_name}}"
-        description: "{{item.description}}"
-        host_switch_spec:
-          resource_type: StandardHostSwitchSpec
-          host_switches: "{{item.host_switches}}"
-        transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
-        state: present
-      with_items:
-        - "{{transport_node_profiles}}"
+    - name: Deploy controller
+      nsxt_controllers:
+          hostname: "{{hostname}}"
+          username: "{{username}}"
+          password: "{{password}}"
+          validate_certs: False
+          deployment_requests:
+          - roles:
+            - CONTROLLER
+            form_factor: "SMALL"
+            user_settings:
+              cli_password: "{{password}}"
+              root_password: "{{password}}"
+            deployment_config:
+              placement_type: VsphereClusterNodeVMDeploymentConfig
+              vc_id: "{{compute_manager.id}}"
+              management_network_id: "{{network_management_id}}"
+              hostname: "nsxt-cont"
+              compute_id: "{{cluster_id}}"
+              storage_id: "{{datastore_id}}"
+              default_gateway_addresses:
+              - "{{controller_gateway}}"
+              management_port_subnets:
+              - ip_addresses:
+                - "{{controller_ip}}"
+                prefix_length: "{{controller_prefix_length}}"
+          clustering_config:
+            clustering_type: ControlClusteringConfig
+            shared_secret: "123456"
+            join_to_existing_cluster: false
+          #node_id: b56f3b3d-51e1-4177-ac02-bd2d14f1d667
+          state: present
 
-    - name: Attach Transport node profile to cluster
-      nsxt_transport_node_collections:
-        hostname: "{{hostname}}"
-        username: "{{username}}"
-        password: "{{password}}"
-        validate_certs: False
-        display_name: "{{item.display_name}}"
-        resource_type: "TransportNodeCollection"
-        description: "{{item.description}}"
-        compute_manager_name: "{{item.compute_manager_name}}"
-        cluster_name: "{{item.cluster_name}}"
-        transport_node_profile_name: "{{item.transport_node_profile_name}}"
-        state: present      
-      with_items:
-        - "{{cluster_attach}}"
+    ## 2.3 requires manual attachment of transport node to cluster or more work.
+          
+    # - name: Create transport node profile
+    #   nsxt_transport_node_profiles:
+    #     hostname: "{{hostname}}"
+    #     username: "{{username}}"
+    #     password: "{{password}}"
+    #     validate_certs: False
+    #     resource_type: TransportNodeProfile
+    #     display_name: "{{item.display_name}}"
+    #     description: "{{item.description}}"
+    #     host_switch_spec:
+    #       resource_type: StandardHostSwitchSpec
+    #       host_switches: "{{item.host_switches}}"
+    #     transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
+    #     state: present
+    #   with_items:
+    #     - "{{transport_node_profiles}}"
+
+    # - name: Attach Transport node profile to cluster
+    #   nsxt_transport_node_collections:
+    #     hostname: "{{hostname}}"
+    #     username: "{{username}}"
+    #     password: "{{password}}"
+    #     validate_certs: False
+    #     display_name: "{{item.display_name}}"
+    #     resource_type: "TransportNodeCollection"
+    #     description: "{{item.description}}"
+    #     compute_manager_name: "{{item.compute_manager_name}}"
+    #     cluster_name: "{{item.cluster_name}}"
+    #     transport_node_profile_name: "{{item.transport_node_profile_name}}"
+    #     state: present      
+    #   with_items:
+    #     - "{{cluster_attach}}"
 
     # 3 tasks below only supports creating a single edge.
     - name: Add Edge VM
@@ -153,15 +193,15 @@
             allow_ssh_root_login: True
             enable_ssh: True
             placement_type: VsphereDeploymentConfig
-            vc_name: "vCenter"
-              data_network_ids:
-              - "{{network_management_id}}" # Fix
-              - "{{network_management_id}}" # Fix
-              - "{{network_tep_id}}" # Fix
-              management_network_id: "{{network_management_id}}" # Fix
-              hostname: "{{edge_hostname}}"
-              compute_id: "{{cluster_id}}" # Fix
-              storage_id: "{{datastore_id}}" # Fix
+            vc_id: "{{compute_manager.id}}"
+            data_network_ids:
+            - "{{network_management_id}}" # Fix
+            - "{{network_management_id}}" # Fix
+            - "{{network_tep_id}}" # TEP network. Fix
+            management_network_id: "{{network_management_id}}" # Fix
+            hostname: "{{edge_hostname}}"
+            compute_id: "{{cluster_id}}" # Fix
+            storage_id: "{{datastore_id}}" # Fix
             default_gateway_addresses:
             - "{{edge_default_gateway_addresses}}"
             management_port_subnets:
@@ -199,11 +239,11 @@
               allow_ssh_root_login: True
               enable_ssh: True
               placement_type: VsphereDeploymentConfig
-              vc_name: "vCenter"
+              vc_id: "{{compute_manager.id}}"
               data_network_ids:
               - "{{network_management_id}}" # Fix
               - "{{network_management_id}}" # Fix
-              - "{{network_tep_id}}" # Fix
+              - "{{network_tep_id}}" # TEP network. Fix
               management_network_id: "{{network_management_id}}" # Fix
               hostname: "{{edge_hostname}}"
               compute_id: "{{cluster_id}}" # Fix

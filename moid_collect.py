@@ -5,8 +5,7 @@ from pprint import pprint
 
 with open("vsphere-answerfile.yml", 'r') as f:
     vsphere_data = yaml.load(f)
-
-
+ 
 vc_fqdn = vsphere_data['vcenter']['ip']
 vc_user = vsphere_data['vcenter']['user']
 vc_pass = vsphere_data['vcenter']['password']
@@ -24,7 +23,10 @@ try:
 except Exception as e:
     print(e)
 
-moid_lookup = {}
+cluster_moid_lookup = {}
+datastore_moid_lookup = {}
+network_moid_lookup = {}
+
 atexit.register(connect.Disconnect, svc_instance)
 content = svc_instance.RetrieveContent()
 objview = content.viewManager.CreateContainerView(content.rootFolder, [vim.ClusterComputeResource], True)
@@ -32,20 +34,46 @@ clusters = objview.view
 objview.Destroy()
 
 for cluster in clusters:
-    moid_lookup[cluster.name] = cluster._moId
+    cluster_moid_lookup[cluster.name] = cluster._moId
 
-pprint(moid_lookup)
+pprint(cluster_moid_lookup)
 
 objview = content.viewManager.CreateContainerView(content.rootFolder, [vim.Datastore], True)
 datastores = objview.view
 
 for datastore in datastores:
-    moid_lookup[datastore.name] = datastore._GetMoId()
+    datastore_moid_lookup[datastore.name] = datastore._GetMoId()
+
+pprint(datastore_moid_lookup)
 
 objview = content.viewManager.CreateContainerView(content.rootFolder, [vim.Network], True)
 networks = objview.view
 
 for network in networks:
-    moid_lookup[network.name] = network._moId
+    network_moid_lookup[network.name] = network._moId
 
-pprint(moid_lookup)
+pprint(network_moid_lookup)
+
+with open("nsxt_answerfile_base.yml", 'r') as f:
+    nsxt_data = yaml.load(f)
+
+
+
+#print(network_moid_lookup['Net1'])
+moids = {}
+moids['network_management_id'] = network_moid_lookup[nsxt_data['network_management_name']]
+moids['network_tep_id'] = network_moid_lookup[nsxt_data['network_tep_name']]
+moids['datastore_id'] = datastore_moid_lookup[nsxt_data['datastore_name']]
+moids['cluster_id'] = cluster_moid_lookup[nsxt_data['cluster_name']]
+
+import sys
+import fileinput
+
+for line in fileinput.input(["nsxt_answerfile_base.yml"], inplace=True):
+    for key, value in moids.items():
+        if line.strip().startswith(key):
+            line = '%s: "%s"\n' % (key, value)
+    sys.stdout.write(line)
+
+# with open("nsxt_answerfile_base-t.yml", 'w') as f:
+#     yaml.dump(nsxt_data, f, default_flow_style=False)
