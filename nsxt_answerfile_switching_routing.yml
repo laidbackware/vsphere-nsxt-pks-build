@@ -1,4 +1,3 @@
-
 logical_switches:
 - display_name: PKS_Infra
   transport_zone_name: "TZ1-OVER"
@@ -55,10 +54,5 @@ nsxt_ip_blocks:
 route_advertise:
   display_name: "T1_PKS_Infra"
   enabled: True
-  advertise_dns_forwarder: True
-  advertise_lb_snat_ip: True
-  advertise_lb_vip: True
-  advertise_nat_routes: True
-  advertise_nsx_connected_routes: True
   advertise_static_routes: True
 

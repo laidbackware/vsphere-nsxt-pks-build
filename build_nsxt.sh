@@ -3,7 +3,7 @@
 set -e # fail fast
 set -x # print commands
 
-git clone https://github.com/laidbackware/ansible-for-nsxt.git
+#git clone https://github.com/laidbackware/ansible-for-nsxt.git
 
 python moid_collect.py
 

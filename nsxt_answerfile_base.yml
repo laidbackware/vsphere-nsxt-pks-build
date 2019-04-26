@@ -1,8 +1,6 @@
 hostname: "192.168.0.183"
-username: "admin"
-password: "Pass123$123$"
-vc_password: "Pass123$"
-vc_ip: "192.168.0.181"
+username: "admin" # NSX Manager
+password: "Pass123$123$" # NSX Manager
 validate_certs: False
 
 # Manager Section. Can be different to Edge vCenter/network
@@ -18,10 +16,9 @@ manager_ntp_server: "192.168.0.110"
 manager_gateway: "192.168.0.1"
 manager_ip_address: "192.168.0.183"
 manager_netmask: "255.255.255.0"
-manager_admin_password: "Pass123$123$"
 manager_cli_password: "Pass123$123$"
-manager_path_to_ova: "http://192.168.0.3:8000/nsxt231"
-manager_ova_file: "nsx-unified-appliance-2.3.1.0.0.11294305.ovf"
+manager_path_to_ova: "http://192.168.0.3:8000/nsxt240"
+manager_ova_file: "nsx-unified-appliance-2.4.0.0.0.12456291.ovf"
 manager_vcenter: "192.168.0.113"
 manager_vcenter_user: "administrator@vsphere.local"
 manager_vcenter_passwd: "Pass123$"
@@ -29,14 +26,14 @@ manager_deployment_size: "small"
 
 # vCenter object ID mappings
 network_management_name: "Net1"
-network_tep_name: "TEP"
+network_tep_name: "TEP_PG"
 datastore_name: "datastore1"
 cluster_name: "Compute"
 
 # vCenter unique IDs, can be updated by moid_collect.py
-network_management_id: "network-20"
-network_tep_id: "network-22"
-datastore_id: "datastore-19"
+network_management_id: "network-13"
+network_tep_id: "network-12"
+datastore_id: "datastore-11"
 cluster_id: "domain-c7"
 
 ip_pools:
@@ -73,17 +70,19 @@ uplink_profiles:
   transport_vlan: 0
 
 # Edge Section
-edge_ip_addresses: "192.168.0.184"
-edge_default_gateway_addresses: "192.168.0.1"
-edge_size: "MEDIUM"
-edge_ip: "192.168.0.184"
-edge_prefix_length: "24"
-edge_hostname: "EdgeVM1"
+edges:
+- edge_ip_addresses: "192.168.0.184"
+  edge_default_gateway_addresses: "192.168.0.1"
+  edge_size: "MEDIUM"
+  edge_ip: "192.168.0.184"
+  edge_prefix_length: "24"
+  edge_hostname: "Edge1"
 
 edge_cluster_name: "edge-cluster-1"
 
 edge_transport_nodes:
-- host_switch_spec:
+- display_name: "Edge1"
+  host_switch_spec:
     resource_type: "StandardHostSwitchSpec"
     host_switches:
     - host_switch_profiles:
@@ -103,9 +102,6 @@ edge_transport_nodes:
       pnics:
       - device_name: "fp-eth0"
         uplink_name: "uplink-1"
-  node_deployment_info:
-    resource_type: "EdgeNode"
-    deployment_config: 
   transport_zone_endpoints:
   - transport_zone_name: "TZ1-OVER"
   - transport_zone_name: "TZ1-VLAN"

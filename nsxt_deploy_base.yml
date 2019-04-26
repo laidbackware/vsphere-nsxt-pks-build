@@ -21,7 +21,7 @@
         gateway: "{{manager_gateway}}"
         ip_address: "{{manager_ip_address}}"
         netmask: "{{manager_netmask}}"
-        admin_password: "{{manager_admin_password}}"
+        admin_password: "{{password}}"
         cli_password: "{{manager_cli_password}}"
         path_to_ova: "{{manager_path_to_ova}}"
         ova_file: "{{manager_ova_file}}"
@@ -32,14 +32,19 @@
         role: "nsx-manager nsx-controller"
         allow_ssh_root_login: True
         ssh_enabled: True
+      register: result_manager
 
-    - name: wait_for http 
+    - name: Wait for the manager to respond on 443
       command: "curl -k --silent -v https://{{ manager_ip_address }}/login.jsp"
       register: result
       until: result.stdout.find("VMware NSX") != -1
       retries: 120
       delay: 5
       changed_when: false
+    
+    - name: Wait for the API to settle
+      pause: minutes=3
+      when: result_manager.changed
  
     - name: Create ip pool
       nsxt_ip_pools:
@@ -91,15 +96,17 @@
           username: "{{username}}"
           password: "{{password}}"
           validate_certs: False
-          display_name: "vCenter"
-          server: "{{vc_ip}}"
-          origin_type: vCenter
+          display_name: "{{ item.display_name }}"
+          server: "{{ item.server }}"
+          origin_type: "{{ item.origin_type }}"
           credential:
             credential_type: UsernamePasswordLoginCredential
-            username: "administrator@vsphere.local"
-            password: "{{vc_password}}"
+            username: "{{ item.username }}"
+            password: "{{ item.password }}"
           state: present
       register: compute_manager
+      with_items:
+        - "{{compute_managers}}"
 
     - name: Create transport node profile
       nsxt_transport_node_profiles:
@@ -142,10 +149,10 @@
         password: "{{password}}"
         validate_certs: False
         resource_type: "EdgeNode"
-        display_name: "EdgeNode1"  #TODO not assinging as name in Manager
+        display_name: "{{item.edge_hostname}}"  # TODO not assinging as name in Manager
         ip_addresses:
         deployment_config:
-          form_factor: "{{edge_size}}"
+          form_factor: "{{item.edge_size}}"
           node_user_settings:
             cli_password: "{{password}}"
             root_password: "{{password}}"
@@ -154,24 +161,37 @@
             enable_ssh: True
             placement_type: VsphereDeploymentConfig
             vc_name: "vCenter"
-              data_network_ids:
-              - "{{network_management_id}}" # Fix
-              - "{{network_management_id}}" # Fix
-              - "{{network_tep_id}}" # Fix
-              management_network_id: "{{network_management_id}}" # Fix
-              hostname: "{{edge_hostname}}"
-              compute_id: "{{cluster_id}}" # Fix
-              storage_id: "{{datastore_id}}" # Fix
+            data_network_ids:
+            - "{{network_management_id}}" # Fix
+            - "{{network_management_id}}" # Fix
+            - "{{network_tep_id}}" # Fix
+            management_network_id: "{{network_management_id}}" # Fix
+            hostname: "{{item.edge_hostname}}"
+            compute_id: "{{cluster_id}}" # Fix
+            storage_id: "{{datastore_id}}" # Fix
             default_gateway_addresses:
-            - "{{edge_default_gateway_addresses}}"
+            - "{{item.edge_default_gateway_addresses}}"
             management_port_subnets:
             - ip_addresses:
-              - "{{edge_ip_addresses}}"
-              prefix_length: "{{edge_prefix_length}}"
+              - "{{item.edge_ip_addresses}}"
+              prefix_length: "{{item.edge_prefix_length}}"
         state: present
+      
       register: result_edge
+      with_items: "{{edges}}"     
+    #   async: 7200
+    #   poll: 0
 
-    - debug: msg="{{result_edge.id}}"
+    # - name: Check Edge deployments
+    #   async_status:
+    #     jid: "{{item.ansible_job_id}}"
+    #   register: job_result
+    #   until: job_result.finished
+    #   with_items: "{{result_edge.results}}"
+    #   retries: 120
+    #   delay: 15
+    
+    - debug: msg="{{result_edge}}"
 
     - name: Create transport node
       nsxt_transport_nodes:
@@ -179,41 +199,41 @@
         username: "{{username}}"
         password: "{{password}}"
         validate_certs: False
-        display_name: "{{result_edge.id}}"
-        node_id: "{{result_edge.id}}"
-        host_switch_spec: "{{item.host_switch_spec}}"
+        display_name: "{{result_edge.results.0.id}}"
+        node_id: "{{result_edge.results.0.id}}" # HACK. NSX-T 2.4.0 has bug which ignores display name in POST calls.
+        host_switch_spec: "{{item.host_switch_spec}}" # HACK. NSX-T 2.4.0 has bug which ignores display name in POST calls.
         transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
-        #resource_type: 'TransportNode'
-        node_deployment_info:
-          resource_type: "EdgeNode"
-          id: "{{result_edge.id}}"
-          ip_addresses:
-          - "{{edge_ip_addresses}}"
-          external_id: "{{result_edge.id}}"
-          deployment_config:
-            form_factor: "{{edge_size}}"  
-            node_user_settings:
-              cli_password: "{{password}}"
-              root_password: "{{password}}"
-            vm_deployment_config:
-              allow_ssh_root_login: True
-              enable_ssh: True
-              placement_type: VsphereDeploymentConfig
-              vc_name: "vCenter"
-              data_network_ids:
-              - "{{network_management_id}}" # Fix
-              - "{{network_management_id}}" # Fix
-              - "{{network_tep_id}}" # Fix
-              management_network_id: "{{network_management_id}}" # Fix
-              hostname: "{{edge_hostname}}"
-              compute_id: "{{cluster_id}}" # Fix
-              storage_id: "{{datastore_id}}" # Fix
-              default_gateway_addresses:
-              - "{{edge_default_gateway_addresses}}"
-              management_port_subnets:
-              - ip_addresses:
-                - "{{edge_ip_addresses}}"
-                prefix_length: "{{edge_prefix_length}}"
+        resource_type: 'TransportNode'
+        # node_deployment_info:
+        #   resource_type: "EdgeNode"
+        #   id: "{{result_edge.id}}"
+        #   ip_addresses:
+        #   - "{{edge_ip_addresses}}"
+        #   external_id: "{{result_edge.id}}"
+        #   # deployment_config:
+          #   form_factor: "{{edge_size}}"  
+          #   node_user_settings:
+          #     cli_password: "{{password}}"
+          #     root_password: "{{password}}"
+          #   vm_deployment_config:
+          #     allow_ssh_root_login: True
+          #     enable_ssh: True
+          #     placement_type: VsphereDeploymentConfig
+          #     vc_name: "vCenter"
+          #     data_network_ids:
+          #     - "{{network_management_id}}" # Fix
+          #     - "{{network_management_id}}" # Fix
+          #     - "{{network_tep_id}}" # Fix
+          #     management_network_id: "{{network_management_id}}" # Fix
+          #     hostname: "{{edge_hostname}}"
+          #     compute_id: "{{cluster_id}}" # Fix
+          #     storage_id: "{{datastore_id}}" # Fix
+          #     default_gateway_addresses:
+          #     - "{{edge_default_gateway_addresses}}"
+          #     management_port_subnets:
+          #     - ip_addresses:
+          #       - "{{edge_ip_addresses}}"
+          #       prefix_length: "{{edge_prefix_length}}"
         state: present
       with_items:
         - "{{edge_transport_nodes}}"
@@ -229,7 +249,7 @@
         - profile_id: 91bcaa06-47a1-11e4-8316-17ffc770799b
           resource_type: EdgeHighAvailabilityProfile
         members:
-        - transport_node_name: "{{result_edge.id}}"
+        - transport_node_name: "{{result_edge.results.0.id}}" # Hack because Edge name not set correctly.
         state: present
 
  ##TODO
@@ -238,6 +258,5 @@
 
  ##Improvement
  # Handle error if edge creation failed and the edge still exists. Probably module update.
- # Invesitigate collapsing edge creation and transport node into a single section
- # Modify the above to allow for create of more than one object
- # Check why IP pool updates. After ip claim this will likely error.
+ # Invesitigate collapsing edge creation and transport node into a single section. This shold work.
+ # Check why IP pool updates even if not changed. After ip claim this will likely error.

@@ -111,3 +111,15 @@
         advertise_static_routes: "{{item.advertise_static_routes}}"
       with_items:
         - "{{route_advertise}}"
+
+    - name: Create a new IP address block
+      nsxt_ip_sets:
+        hostname: "{{hostname}}"
+        username: "{{username}}"
+        password: "{{password}}"
+        display_name: "{{item.display_name}}"
+        ip_addresses: "{{item.ip_addresses}}"
+        state: absent
+        validate_certs: False
+      with_items:
+        - "{{nsxt_ip_sets}}"

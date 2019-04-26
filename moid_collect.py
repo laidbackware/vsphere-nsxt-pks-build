@@ -1,6 +1,6 @@
 from pyVim import connect
 from pyVmomi import vim
-import sys, ssl, atexit, yaml
+import sys, ssl, atexit, yaml, fileinput
 from pprint import pprint
 
 with open("vsphere-answerfile.yml", 'r') as f:
@@ -65,9 +65,6 @@ moids['network_management_id'] = network_moid_lookup[nsxt_data['network_manageme
 moids['network_tep_id'] = network_moid_lookup[nsxt_data['network_tep_name']]
 moids['datastore_id'] = datastore_moid_lookup[nsxt_data['datastore_name']]
 moids['cluster_id'] = cluster_moid_lookup[nsxt_data['cluster_name']]
-
-import sys
-import fileinput
 
 for line in fileinput.input(["nsxt_answerfile_base.yml"], inplace=True):
     for key, value in moids.items():
