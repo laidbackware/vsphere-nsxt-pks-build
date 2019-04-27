@@ -55,4 +55,4 @@ route_advertise:
   display_name: "T1_PKS_Infra"
   enabled: True
   advertise_static_routes: True
-
+  advertise_nsx_connected_routes: True

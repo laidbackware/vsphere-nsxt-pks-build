@@ -34,16 +34,26 @@
         ssh_enabled: True
       register: result_manager
 
-    - name: Wait for the manager to respond on 443
-      command: "curl -k --silent -v https://{{ manager_ip_address }}/login.jsp"
-      register: result
-      until: result.stdout.find("VMware NSX") != -1
+    - name: Check API is online
+      uri:
+        url: "https://{{ hostname }}/api/v1/license"
+        method: GET
+        user: "{{ username }}"
+        password: "{{ password }}"
+        #body: "{{ lookup('file','issue.json') }}"
+        force_basic_auth: yes
+        status_code: 200
+        body_format: json
+        timeout: 5
+        validate_certs: False
+      register: api_response
+      until: api_response.status == 200
       retries: 120
-      delay: 5
-      changed_when: false
+      delay: 10
+      changed_when: false 
     
-    - name: Wait for the API to settle
-      pause: minutes=3
+    - name: Wait 10 seconds for the API to settle
+      pause: seconds=10
       when: result_manager.changed
  
     - name: Create ip pool

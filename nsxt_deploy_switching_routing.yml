@@ -102,24 +102,12 @@
         password: "{{password}}"
         display_name: "{{item.display_name}}"
         validate_certs: False
-        enabled: "{{item.enabled}}"
-        advertise_dns_forwarder: "{{item.advertise_dns_forwarder}}"
-        advertise_lb_snat_ip: "{{item.advertise_lb_snat_ip}}"
-        advertise_lb_vip: "{{item.advertise_lb_vip}}"
-        advertise_nat_routes: "{{item.advertise_nat_routes}}"
-        advertise_nsx_connected_routes: "{{item.advertise_nsx_connected_routes}}"
-        advertise_static_routes: "{{item.advertise_static_routes}}"
+        enabled: "{{item.enabled | default(omit) }}"
+        advertise_dns_forwarder: "{{item.advertise_dns_forwarder | default(omit) }}"
+        advertise_lb_snat_ip: "{{item.advertise_lb_snat_ip | default(omit) }}"
+        advertise_lb_vip: "{{item.advertise_lb_vip | default(omit) }}"
+        advertise_nat_routes: "{{item.advertise_nat_routes | default(omit) }}"
+        advertise_nsx_connected_routes: "{{item.advertise_nsx_connected_routes | default(omit) }}"
+        advertise_static_routes: "{{item.advertise_static_routes | default(omit) }}"
       with_items:
         - "{{route_advertise}}"
-
-    - name: Create a new IP address block
-      nsxt_ip_sets:
-        hostname: "{{hostname}}"
-        username: "{{username}}"
-        password: "{{password}}"
-        display_name: "{{item.display_name}}"
-        ip_addresses: "{{item.ip_addresses}}"
-        state: absent
-        validate_certs: False
-      with_items:
-        - "{{nsxt_ip_sets}}"

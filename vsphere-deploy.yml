@@ -1,6 +1,6 @@
 ---
-- include: playbooks/prepareISOInstaller.yml
-- include: playbooks/deploy_vc_and_hosts.yml
+- import_playbook: playbooks/prepareISOInstaller.yml
+- import_playbook: playbooks/deploy_vc_and_hosts.yml
 
 # - name: Wait 5 more minutes the vESXi hosts to become fully responsive
 #   hosts: localhost
@@ -12,8 +12,8 @@
 #       pause: minutes=5
 #       when: vESX|length > 5
 
-- include: playbooks/configureNestedESXi.yml
-- include: playbooks/customize_esxi.yml
+- import_playbook: playbooks/configureNestedESXi.yml
+- import_playbook: playbooks/customize_esxi.yml
 
 #TODO Check if ESXi hosts exist before triggering ISO build and upload 
 #TODO Thin disk mode not passing in from answers file, as the template module converts in to a string
