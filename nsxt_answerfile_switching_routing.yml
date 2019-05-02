@@ -1,3 +1,26 @@
+logical_router_ports_t0_up:
+- display_name: "T0-Uplink"
+  resource_type: "LogicalRouterUpLinkPort"
+  logical_router_name: "tier-0"
+  ip_addresses: "192.168.0.185"
+  prefix_length: "24"
+  logical_switch_name: "Uplink_LS" # Existing
+  logical_switch_port_name: "T0-Uplink" # Will be created
+
+logical_router_static_routes:
+- logical_router_name: "tier-0"
+  ip_address: "192.168.0.1"
+  network: "0.0.0.0/0"
+  administrative_distance: "2"
+
+logical_router_ports_ls_up:
+- display_name: "PKS_Infra-Uplink"
+  logical_router_name: "T1_PKS_Infra"
+  ip_addresses: "10.0.0.1"
+  prefix_length: "26"
+  logical_switch_name: "PKS_Infra" # Existing
+  logical_switch_port_name: "PKS_Infra-Uplink" # Will be created
+
 logical_switches:
 - display_name: PKS_Infra
   transport_zone_name: "TZ1-OVER"
@@ -18,32 +41,9 @@ logical_routers:
   router_type: TIER1
   high_availability_mode: ACTIVE_STANDBY
 
-logical_router_ports_t0_up:
-- display_name: "T0-Uplink"
-  resource_type: "LogicalRouterUpLinkPort"
-  logical_router_name: "tier-0"
-  ip_addresses: "192.168.0.185"
-  prefix_length: "24"
-  logical_switch_name: "Uplink_LS" # Existing
-  logical_switch_port_name: "T0-Uplink" # Will be created
-
-logical_router_static_routes:
-- logical_router_name: "tier-0"
-  ip_address: "192.168.0.1"
-  network: "0.0.0.0/0"
-  administrative_distance: "2"
-
 logical_router_ports_linking:
 - logical_router_t0_name: "tier-0"
   logical_router_t1_name: "T1_PKS_Infra"
-
-logical_router_ports_ls_up:
-- display_name: "PKS_Infra-Uplink"
-  logical_router_name: "T1_PKS_Infra"
-  ip_addresses: "10.0.0.1"
-  prefix_length: "26"
-  logical_switch_name: "PKS_Infra" # Existing
-  logical_switch_port_name: "PKS_Infra-Uplink" # Will be created
 
 nsxt_ip_blocks:
 - display_name: "Node-Block"

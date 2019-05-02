@@ -52,8 +52,8 @@
       delay: 10
       changed_when: false 
     
-    - name: Wait 10 seconds for the API to settle
-      pause: seconds=10
+    - name: Wait 30 seconds for the API to settle
+      pause: seconds=30
       when: result_manager.changed
  
     - name: Create ip pool

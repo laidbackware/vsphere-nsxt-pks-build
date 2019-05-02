@@ -4,12 +4,12 @@ password: "Pass123$123$" # NSX Manager
 validate_certs: False
 
 # Manager Section. Can be different to Edge vCenter/network
-manager_datacenter: "Home"
-manager_datastore: "SSD"
+manager_datacenter: "Lab"
+manager_datastore: "datastore1"
 manager_portgroup: "Net1"
-manager_cluster: "Physical"
+manager_cluster: "Compute"
 manager_vmname: "nsxt-manager"
-manager_hostname: "nsxt-manager-24"
+manager_hostname: "nsxt-manager"
 manager_dns_server: "192.168.0.110"
 manager_dns_domain: "home.local"
 manager_ntp_server: "192.168.0.110"
@@ -19,7 +19,7 @@ manager_netmask: "255.255.255.0"
 manager_cli_password: "Pass123$123$"
 manager_path_to_ova: "http://192.168.0.3:8000/nsxt240"
 manager_ova_file: "nsx-unified-appliance-2.4.0.0.0.12456291.ovf"
-manager_vcenter: "192.168.0.113"
+manager_vcenter: "192.168.0.181"
 manager_vcenter_user: "administrator@vsphere.local"
 manager_vcenter_passwd: "Pass123$"
 manager_deployment_size: "small"
@@ -49,6 +49,23 @@ ip_pools:
     - start: "10.1.0.1"
       end: "10.1.1.254"
     cidr: "10.1.0.0/23"     
+
+# Edge Section
+edges:
+- edge_ip_addresses: "192.168.0.184"
+  edge_default_gateway_addresses: "192.168.0.1"
+  edge_size: "MEDIUM"
+  edge_ip: "192.168.0.184"
+  edge_prefix_length: "24"
+  edge_hostname: "Edge1"
+
+compute_managers:
+- display_name: "vCenter"
+  server: "192.168.0.181"
+  origin_type: vCenter
+  credential_type: UsernamePasswordLoginCredential
+  username: "administrator@vsphere.local"
+  password: "Pass123$"
     
 transportzones:
 - display_name: "TZ1-OVER"
@@ -68,15 +85,6 @@ uplink_profiles:
       uplink_type: PNIC
     policy: FAILOVER_ORDER
   transport_vlan: 0
-
-# Edge Section
-edges:
-- edge_ip_addresses: "192.168.0.184"
-  edge_default_gateway_addresses: "192.168.0.1"
-  edge_size: "MEDIUM"
-  edge_ip: "192.168.0.184"
-  edge_prefix_length: "24"
-  edge_hostname: "Edge1"
 
 edge_cluster_name: "edge-cluster-1"
 
@@ -105,14 +113,6 @@ edge_transport_nodes:
   transport_zone_endpoints:
   - transport_zone_name: "TZ1-OVER"
   - transport_zone_name: "TZ1-VLAN"
-
-compute_managers:
-- display_name: "vCenter"
-  server: "192.168.0.181"
-  origin_type: vCenter
-  credential_type: UsernamePasswordLoginCredential
-  username: "administrator@vsphere.local"
-  password: "Pass123$"
 
 transport_node_profiles:
 - display_name: TNP1

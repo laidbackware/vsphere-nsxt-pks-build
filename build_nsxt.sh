@@ -11,6 +11,8 @@ fi
 
 date
 
+if [ -d "ansible-for-nsxt/" ]; then rm -rf ansible-for-nsxt/; fi
+
 git clone https://github.com/laidbackware/ansible-for-nsxt.git --branch stable-2.4
 
 python moid_collect.py

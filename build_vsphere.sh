@@ -11,6 +11,7 @@ fi
 
 date
 
+if [ -d "vsphere-lab-deploy/" ]; then rm -rf vsphere-lab-deploy/; fi
 git clone https://github.com/laidbackware/vsphere-lab-deploy.git --branch=optimize_build
 
 cd vsphere-lab-deploy
