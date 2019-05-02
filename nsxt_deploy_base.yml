@@ -216,36 +216,6 @@
         host_switch_spec: "{{item.host_switch_spec}}" # HACK. NSX-T 2.4.0 has bug which ignores display name in POST calls.
         transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
         resource_type: 'TransportNode'
-        # node_deployment_info:
-        #   resource_type: "EdgeNode"
-        #   id: "{{result_edge.id}}"
-        #   ip_addresses:
-        #   - "{{edge_ip_addresses}}"
-        #   external_id: "{{result_edge.id}}"
-        #   # deployment_config:
-          #   form_factor: "{{edge_size}}"  
-          #   node_user_settings:
-          #     cli_password: "{{password}}"
-          #     root_password: "{{password}}"
-          #   vm_deployment_config:
-          #     allow_ssh_root_login: True
-          #     enable_ssh: True
-          #     placement_type: VsphereDeploymentConfig
-          #     vc_name: "vCenter"
-          #     data_network_ids:
-          #     - "{{network_management_id}}" # Fix
-          #     - "{{network_management_id}}" # Fix
-          #     - "{{network_tep_id}}" # Fix
-          #     management_network_id: "{{network_management_id}}" # Fix
-          #     hostname: "{{edge_hostname}}"
-          #     compute_id: "{{cluster_id}}" # Fix
-          #     storage_id: "{{datastore_id}}" # Fix
-          #     default_gateway_addresses:
-          #     - "{{edge_default_gateway_addresses}}"
-          #     management_port_subnets:
-          #     - ip_addresses:
-          #       - "{{edge_ip_addresses}}"
-          #       prefix_length: "{{edge_prefix_length}}"
         state: present
       with_items:
         - "{{edge_transport_nodes}}"
@@ -263,6 +233,8 @@
         members:
         - transport_node_name: "{{result_edge.results.0.id}}" # Hack because Edge name not set correctly.
         state: present
+      retries: 10
+      delay: 5
 
  ##TODO
  # vCenter names for Edge creation versus moid names. Current order is OK with fixed deployments. Issue opened on source repo
