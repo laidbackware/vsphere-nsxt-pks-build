@@ -114,6 +114,8 @@
             username: "{{ item.username }}"
             password: "{{ item.password }}"
           state: present
+      retries: 10
+      delay: 10
       register: compute_manager
       with_items:
         - "{{compute_managers}}"
