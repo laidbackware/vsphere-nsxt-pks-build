@@ -78,7 +78,16 @@ transportzones:
   description: "Uplink Transport Zone"
 
 uplink_profiles:
-- display_name: uplinkProfile1
+- display_name: uplink_profile
+  mtu: 1500
+  teaming:
+    active_list:
+    - uplink_name: "uplink-1"
+      uplink_type: PNIC
+    policy: FAILOVER_ORDER
+  transport_vlan: 0
+- display_name: tep_profile
+  mtu: 1600
   teaming:
     active_list:
     - uplink_name: "uplink-1"
@@ -94,7 +103,7 @@ edge_transport_nodes:
     resource_type: "StandardHostSwitchSpec"
     host_switches:
     - host_switch_profiles:
-      - name: uplinkProfile1
+      - name: tep_profile
         type: UplinkHostSwitchProfile
       host_switch_name: sw_over
       pnics:
@@ -104,7 +113,7 @@ edge_transport_nodes:
         resource_type: StaticIpPoolSpec
         ip_pool_name: "TEP-Pool"
     - host_switch_profiles:
-      - name: uplinkProfile1
+      - name: uplink_profile
         type: UplinkHostSwitchProfile
       host_switch_name: sw_vlan
       pnics:
@@ -118,7 +127,7 @@ transport_node_profiles:
 - display_name: TNP1
   host_switches:
   - host_switch_profiles:
-    - name: uplinkProfile1
+    - name: uplink_profile
       type: UplinkHostSwitchProfile
     host_switch_name: sw_over
     pnics:

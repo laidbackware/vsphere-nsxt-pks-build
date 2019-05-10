@@ -93,7 +93,7 @@
         validate_certs: False
         resource_type: UplinkHostSwitchProfile
         display_name: "{{item.display_name}}"
-        mtu: 1600
+        mtu: "{{item.mtu}}"
         teaming: "{{item.teaming}}"
         transport_vlan: "{{item.transport_vlan}}"
         state: "present"
@@ -153,7 +153,6 @@
       with_items:
         - "{{cluster_attach}}"
 
-    # 3 tasks below only supports creating a single edge.
     - name: Add Edge VM
       nsxt_fabric_nodes:
         hostname: "{{hostname}}"

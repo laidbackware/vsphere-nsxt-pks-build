@@ -24,8 +24,8 @@ cp nsxt_deploy*.yml ./ansible-for-nsxt/
 
 cd ansible-for-nsxt
 sed -i 's/time.sleep(5)/time.sleep(0.5)/g' ./library/* # Reduce mandatory sleep between commands
-ansible-playbook nsxt_deploy_base.yml 
-ansible-playbook nsxt_deploy_switching_routing.yml
-ansible-playbook nsxt_deploy_fragile.yml
+ansible-playbook nsxt_deploy_base.yml -vvv 
+ansible-playbook nsxt_deploy_switching_routing.yml -vvv
+ansible-playbook nsxt_deploy_fragile.yml -vvv
 
 date
