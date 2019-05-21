@@ -10,7 +10,6 @@ Build out NSX-T with a static route to another router in a repeatible way.
  - Update answer files to contain customization
  - Run build_vsphere.sh to build out infra
  - Run build_nsxt.sh to build out nsxt
- - The edge build will likely fail, of so run python moid_collect.py to get the object reference and update nsxt_deploy_base.yml with the params
 
  Known issues and todo items are listed in the bottom of the deployment YAMLs.
 
