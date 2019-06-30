@@ -4,10 +4,10 @@ password: "Pass123$123$" # NSX Manager
 validate_certs: False
 
 # Manager Section. Can be different to Edge vCenter/network
-manager_datacenter: "Lab"
-manager_datastore: "datastore1"
+manager_datacenter: "Home"
+manager_datastore: "SSD"
 manager_portgroup: "Net1"
-manager_cluster: "Compute"
+manager_cluster: "Physical"
 manager_vmname: "nsxt-manager"
 manager_hostname: "nsxt-manager"
 manager_dns_server: "192.168.0.110"
@@ -17,9 +17,9 @@ manager_gateway: "192.168.0.1"
 manager_ip_address: "192.168.0.183"
 manager_netmask: "255.255.255.0"
 manager_cli_password: "Pass123$123$"
-manager_path_to_ova: "http://192.168.0.3:8000/nsxt240"
-manager_ova_file: "nsx-unified-appliance-2.4.0.0.0.12456291.ovf"
-manager_vcenter: "192.168.0.181"
+manager_path_to_ova: "http://192.168.0.3:8000/nsxt241"
+manager_ova_file: "nsx-unified-appliance-2.4.1.0.0.13716579.ovf"
+manager_vcenter: "192.168.0.113"
 manager_vcenter_user: "administrator@vsphere.local"
 manager_vcenter_passwd: "Pass123$"
 manager_deployment_size: "small"
@@ -31,8 +31,8 @@ datastore_name: "datastore1"
 cluster_name: "Compute"
 
 # vCenter unique IDs, can be updated by moid_collect.py
-network_management_id: "network-13"
-network_tep_id: "network-12"
+network_management_id: "network-14"
+network_tep_id: "network-13"
 datastore_id: "datastore-11"
 cluster_id: "domain-c7"
 
@@ -127,7 +127,7 @@ transport_node_profiles:
 - display_name: TNP1
   host_switches:
   - host_switch_profiles:
-    - name: uplink_profile
+    - name: tep_profile
       type: UplinkHostSwitchProfile
     host_switch_name: sw_over
     pnics:

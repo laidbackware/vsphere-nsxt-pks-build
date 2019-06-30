@@ -174,7 +174,7 @@
             vc_name: "vCenter"
             data_network_ids:
             - "{{network_management_id}}" # Fix
-            - "{{network_management_id}}" # Fix
+            - "{{network_tep_id}}" # Fix
             - "{{network_tep_id}}" # Fix
             management_network_id: "{{network_management_id}}" # Fix
             hostname: "{{item.edge_hostname}}"
@@ -212,7 +212,8 @@
         validate_certs: False
         display_name: "{{result_edge.results.0.id}}"
         node_id: "{{result_edge.results.0.id}}" # HACK. NSX-T 2.4.0 has bug which ignores display name in POST calls.
-        host_switch_spec: "{{item.host_switch_spec}}" # HACK. NSX-T 2.4.0 has bug which ignores display name in POST calls.
+        #node_id: "{{item.display_name}}"
+        host_switch_spec: "{{item.host_switch_spec}}"
         transport_zone_endpoints: "{{item.transport_zone_endpoints}}"
         resource_type: 'TransportNode'
         state: present

@@ -20,6 +20,6 @@ rm ./*yml
 
 cp ../vsphere-answerfile.yml ./answerfile.yml
 cp ../vsphere-deploy.yml .
-ansible-playbook vsphere-deploy.yml
+ansible-playbook vsphere-deploy.yml -vvv
 
 date
