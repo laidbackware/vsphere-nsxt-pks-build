@@ -17,7 +17,8 @@ Build out NSX-T with a static route to another router in a repeatible way.
 # TODO
 - Generate principal ID
 - Extract IDs for PKS Tile
+
+# TODO Refactor
 - Test setup of resource pools
 - Fix why ESXi wasn't auto deploying
-
 - Replace machine cert in playbook
