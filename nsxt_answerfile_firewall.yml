@@ -1,0 +1,180 @@
+---
+nsxt_ip_sets:
+- display_name: 'lan-192'
+  ip_addresses:
+  - '192.168.0.0/24'
+  state: present
+- display_name: 'pks-mgmt'
+  ip_addresses:
+  - '10.0.0.0/26'
+  state: present
+- display_name: 'node-block'
+  ip_addresses:
+  - '172.16.0.0/17'
+  state: present
+- display_name: 'pod-block'
+  ip_addresses: 
+  - '172.16.128.0/17'
+  state: present
+- display_name: 'pks-floating'
+  ip_addresses: 
+  - '10.1.0.0/23'
+  state: present
+- display_name: 'router-link'
+  ip_addresses: 
+  - '100.64.0.0/16'
+  state: present
+- display_name: 'pks-api'
+  ip_addresses: 
+  - '10.0.0.4'
+  state: present
+- display_name: 'outside'
+  ip_addresses: 
+  - '0.0.0.1-9.255.255.255'
+  - '11.0.0.1-172.15.255.255'
+  - '172.32.0.1-255.255.255.254'
+  state: present
+
+nsxt_ns_groups:
+- display_name: 'system-namespaces'
+  membership_criteria:
+    - resource_type: NSGroupTagExpression
+      target_type: 'LogicalPort'
+      scope: 'ncp/project'
+      tag: 'pks-system'
+    - resource_type: NSGroupTagExpression
+      target_type: 'LogicalPort'
+      scope: 'ncp/project'
+      tag: 'kube-system'
+  state: present
+# - display_name: 'everyone'
+#   members:
+#   - resource_type: NSGroupSimpleExpression
+#     target_property: id
+#     op: EQUALS
+#     target_type: IPSet
+#     value: 'lan-192'
+#   - resource_type: NSGroupSimpleExpression
+#     target_property: id
+#     op: EQUALS
+#     target_type: IPSet
+#     value: 'pks-mgmt'
+#   - resource_type: NSGroupSimpleExpression
+#     target_property: id
+#     op: EQUALS
+#     target_type: IPSet
+#     value: 'node-block'
+
+  state: present
+
+nsxt_dfw_section_with_rules:
+- display_name: PKS_Static_Section
+  state: present
+  section_placement:
+    operation: insert_top
+  rules:
+  - display_name: 'mgmt_to_mgmt'
+    action: ALLOW
+    sources: 
+    - target_display_name: pks-mgmt
+      target_type: IPSet
+    destinations:
+    - target_display_name: pks-mgmt
+      target_type: IPSet
+
+  # - display_name: 'mgmt_to_lan'
+  #   action: ALLOW
+  #   sources: 
+  #   - target_display_name: pks-mgmt
+  #     target_type: IPSet
+  #   destinations:
+  #   - target_display_name: lan-192
+  #     target_type: IPSet
+
+  - display_name: 'mgmt_and_nodes_to_outside'
+    action: ALLOW
+    sources: 
+    - target_display_name: pks-mgmt
+      target_type: IPSet
+    - target_display_name: node-block
+      target_type: IPSet
+    destinations:
+    - target_display_name: outside
+      target_type: IPSet
+
+  - display_name: 'lan_to_mgmt'
+    action: ALLOW
+    sources: 
+    - target_display_name: lan-192
+      target_type: IPSet
+    destinations:
+    - target_display_name: pks-mgmt
+      target_type: IPSet  
+
+  - display_name: 'mgmt_to_nodes'
+    action: ALLOW
+    sources: 
+    - target_display_name: pks-mgmt
+      target_type: IPSet
+    destinations:
+    - target_display_name: node-block
+      target_type: IPSet 
+
+  - display_name: 'nodes_to_mgmt'
+    action: ALLOW
+    sources: 
+    - target_display_name: node-block
+      target_type: IPSet
+    destinations:
+    - target_display_name: pks-mgmt
+      target_type: IPSet 
+
+  # - display_name: 'nodes_to_lan'
+  #   action: ALLOW
+  #   sources: 
+  #   - target_display_name: node-block
+  #     target_type: IPSet
+  #   destinations:
+  #   - target_display_name: lan-192
+  #     target_type: IPSet 
+
+  - display_name: 'lb_to_nodes_and_pods'
+    action: ALLOW
+    sources: 
+    - target_display_name: router-link
+      target_type: IPSet
+    destinations:
+    - target_display_name: node-block
+      target_type: IPSet 
+    - target_display_name: pod-block
+      target_type: IPSet 
+
+  - display_name: 'system_namespaces_to_API'
+    action: ALLOW
+    sources: 
+    - target_display_name: system-namespaces
+      target_type: NSGroup
+    destinations:
+    - target_display_name: pks-api
+      target_type: IPSet 
+
+  - display_name: 'system_namespaces_to_nodes'
+    action: ALLOW
+    sources: 
+    - target_display_name: system-namespaces
+      target_type: NSGroup
+    destinations:
+    - target_display_name: node-block
+      target_type: IPSet
+
+  - display_name: 'nodes_to_system_pods'
+    action: ALLOW
+    sources: 
+    - target_display_name: node-block
+      target_type: IPSet 
+    destinations:
+    - target_display_name: system-namespaces
+      target_type: NSGroup 
+
+
+

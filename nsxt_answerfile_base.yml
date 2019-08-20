@@ -43,7 +43,7 @@ ip_pools:
     - start: "172.16.0.2"
       end: "172.16.0.254"
     cidr: "172.16.0.0/24"
-- display_name: PKS-Floaters
+- display_name: pks-floating-pool
   subnets:
   - allocation_ranges:
     - start: "10.1.0.1"

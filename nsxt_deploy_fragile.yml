@@ -3,7 +3,6 @@
 ---
 - hosts: 127.0.0.1
   connection: local
-  become: yes
   vars_files:
     - nsxt_answerfile_base.yml
     - nsxt_answerfile_switching_routing.yml
@@ -19,6 +18,7 @@
         logical_switch_name: "{{item.logical_switch_name}}"
         admin_state: "UP"
         state: "present"
+      ignore_errors: yes
       register: result_t0
       with_items:
         - "{{logical_router_ports_t0_up}}"
@@ -43,6 +43,7 @@
           - "{{item.0.ip_addresses}}"
           prefix_length: "{{item.0.prefix_length}}"
         state: "present"
+      ignore_errors: yes
       with_together:
         - "{{logical_router_ports_t0_up}}"
         - "{{result_t0.results}}"
@@ -58,6 +59,7 @@
         logical_switch_name: "{{item.logical_switch_name}}"
         admin_state: "UP"
         state: "present"
+      ignore_errors: yes
       register: result_ls
       with_items:
         - "{{logical_router_ports_ls_up}}"
@@ -79,6 +81,7 @@
           - "{{item.0.ip_addresses}}"
           prefix_length: "{{item.0.prefix_length}}"
         state: "present"
+      ignore_errors: yes
       with_together:
         - "{{logical_router_ports_ls_up}}"
         - "{{result_ls.results}}"

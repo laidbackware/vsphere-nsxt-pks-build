@@ -22,7 +22,7 @@ logical_router_ports_ls_up:
   logical_switch_port_name: "PKS_Infra-Uplink" # Will be created
 
 logical_switches:
-- display_name: PKS_Infra
+- display_name: PKS-Infra
   transport_zone_name: "TZ1-OVER"
   vlan: 0
 - display_name: Uplink_LS
